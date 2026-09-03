@@ -2,6 +2,33 @@
 
 A full-stack dashboard for reviewing ticket revenue, fees, refunds, and Stripe payouts. Webhook fixture records are reconciled in FastAPI and reported through a Nuxt UI frontend.
 
+## Running the project with Docker Compose
+
+Start both services with one command from the project root:
+
+```bash
+docker compose up --build
+```
+The frontend is available at `http://localhost:3000`.
+
+Rerun again
+
+```bash
+docker compose down -v
+docker compose up -d 
+```
+
+`docker compose down -v` also wipes the `backend_data` volume so fixtures are reseeded on the next start.
+
+## API
+
+- `POST /api/webhooks` ingests one charge, refund, or payout delivery.
+- `GET /api/reports/overview` returns summary and breakdown figures.
+- `GET /api/transactions` returns paginated sales or refunds.
+- `GET /api/payouts` returns paginated payouts.
+
+Reporting endpoints accept the period values `today`, `yesterday`, `this_week`, `last_week`, `this_month`, `last_month`, and `all_time`, plus an IANA browser timezone such as `Europe/London`. Monetary values are integer minor GBP units over the API and are formatted by the frontend.
+
 ## Requirements
 
 - Python 3.11+
@@ -31,8 +58,6 @@ bun install
 bun run dev
 ```
 
-The frontend is available at `http://localhost:3000`.
-
 Set `NUXT_PUBLIC_API_BASE_URL` when the API runs somewhere other than `http://localhost:8000`. Typed API methods live in `frontend/lib/api.ts`.
 
 ## Verification
@@ -46,34 +71,3 @@ bun run typecheck
 bun run build
 ```
 
-## Docker Compose
-
-Start both services with one command from the project root:
-
-```bash
-docker compose up --build
-```
-
-The backend seeds the `records.json` and `records2.json` fixtures into the persistent database automatically on startup before serving the API. Seeding is idempotent: the first start of a fresh database fits the fixtures (expect a `created=82 stale=2 invalid=0` summary in the backend logs); later restarts report `stale=N` as existing records are skipped, which is expected and does not mean fixtures failed — the data is persisted in the `backend_data` volume.
-
-Both services are published to the host: the frontend at `http://localhost:3000` and the API at `http://localhost:8000`. The frontend calls the API from the browser at `http://localhost:8000` (see `NUXT_PUBLIC_API_BASE_URL`); the backend container is reachable over the compose network at `http://backend:8000` for server-side calls (`NUXT_API_BASE_URL`).
-
-Because `allow_credentials=True`, the backend reflects the browser's `Origin` header back instead of echoing a fixed list, so CORS works no matter which host the frontend is opened on (localhost, `127.0.0.1`, a LAN IP, or a custom hostname). To restrict to specific origins instead, set `CORS_ORIGINS` (comma-separated) as an environment variable on the backend service; when set, only those origins are allowed.
-
-If you change config or stale containers/volumes cause odd behaviour, start from a clean state:
-
-```bash
-docker compose down -v
-docker compose up --build
-```
-
-`docker compose down -v` also wipes the `backend_data` volume so fixtures are reseeded on the next start.
-
-## API
-
-- `POST /api/webhooks` ingests one charge, refund, or payout delivery.
-- `GET /api/reports/overview` returns summary and breakdown figures.
-- `GET /api/transactions` returns paginated sales or refunds.
-- `GET /api/payouts` returns paginated payouts.
-
-Reporting endpoints accept the period values `today`, `yesterday`, `this_week`, `last_week`, `this_month`, `last_month`, and `all_time`, plus an IANA browser timezone such as `Europe/London`. Monetary values are integer minor GBP units over the API and are formatted by the frontend.
