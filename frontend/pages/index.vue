@@ -178,7 +178,7 @@ function periodRange(details: ReportPeriodDetails | undefined): string {
     <div class="grid gap-6 lg:grid-cols-2">
         <section aria-labelledby="breakdown-heading">
           <div class="mb-4">
-            <h2 id="breakdown-heading" class="text-base font-semibold text-highlighted">Revenue breakdown</h2>
+            <h2 id="breakdown-heading" class="text-base font-semibold text-highlighted">Revenue Breakdown</h2>
             <p class="mt-1 text-sm text-muted">How gross ticket sales become net revenue.</p>
           </div>
 
@@ -200,9 +200,9 @@ function periodRange(details: ReportPeriodDetails | undefined): string {
                 <dt class="text-sm text-muted">Stripe fees</dt>
                 <dd class="financial-number text-sm font-medium text-default">{{ feeDeduction(overview.data.value.revenue_breakdown.stripe_fees, overview.data.value.currency) }}</dd>
               </div>
-              <div class="flex items-center justify-between gap-4 bg-primary/5 px-5 py-4">
+              <div class="flex items-center justify-between gap-4 bg-secondary/5 px-5 py-4">
                 <dt class="text-sm font-semibold text-highlighted">Net revenue</dt>
-                <dd class="financial-number text-base font-semibold text-primary">{{ formatMoney(overview.data.value.revenue_breakdown.net_revenue, overview.data.value.currency) }}</dd>
+                <dd class="financial-number text-base font-semibold">{{ formatMoney(overview.data.value.revenue_breakdown.net_revenue, overview.data.value.currency) }}</dd>
               </div>
             </dl>
           </UCard>
@@ -215,7 +215,7 @@ function periodRange(details: ReportPeriodDetails | undefined): string {
         <section aria-labelledby="schedule-heading" class="flex flex-col">
           <div class="mb-4 flex items-center justify-between gap-4">
             <div>
-              <h2 id="schedule-heading" class="text-base font-semibold text-highlighted">Payout schedule</h2>
+              <h2 id="schedule-heading" class="text-base font-semibold text-highlighted">Payout Schedule</h2>
               <p class="mt-1 text-sm text-muted">Unpaid and processing payouts in the selected period.</p>
             </div>
             <UButton
@@ -236,8 +236,8 @@ function periodRange(details: ReportPeriodDetails | undefined): string {
               :ui="{ root: 'rounded-none border-0', body: 'flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4' }"
             >
               <div class="flex items-center gap-3">
-                <span class="grid size-9 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
-                  <UIcon name="i-lucide-arrow-down-to-line" class="size-4" />
+                <span class="grid size-9 shrink-0 place-items-center rounded-md bg-secondary/5">
+                  <UIcon name="i-lucide-banknote-arrow-down" class="size-4" />
                 </span>
                 <div>
                   <p class="financial-number font-semibold text-highlighted">{{ formatMoney(payout.amount, payout.currency) }}</p>
