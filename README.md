@@ -1,6 +1,6 @@
 # Ticket Tailor
 
-<img width="1388" height="854" alt="beautiful-screenshot-1788468198564" src="https://github.com/user-attachments/assets/940561db-770f-4a84-ba3e-d323e1be5454" />
+<img width="1388" height="854" alt="beautiful-screenshot-1788472563306" src="https://github.com/user-attachments/assets/802719aa-3d68-4346-9843-391b36aeda55" />
 
 <img width="1388" height="854" alt="beautiful-screenshot-1788468229967" src="https://github.com/user-attachments/assets/c6134e47-a901-4e89-ab70-70b36f530ba4" />
 
