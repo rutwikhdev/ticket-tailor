@@ -10,6 +10,7 @@ backend/*.egg-info/
 backend/.venv/
 backend/.pytest_cache/
 backend/*/__pycache__*
+backend/src/*.egg-info*
 
 # Nuxt / Bun
 frontend/.nuxt/
