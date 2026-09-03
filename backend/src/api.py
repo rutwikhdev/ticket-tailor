@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from typing import Literal
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, and_, case, func, or_, select
 from sqlalchemy.orm import Session
 
 from .db import BalanceTransaction, Payout, PayoutTransaction
@@ -180,55 +180,63 @@ def overview(
     session: Session = Depends(get_session),
 ) -> dict:
     selected = requested_period(period, timezone)
-    transaction_rows = session.scalars(
-        filter_dates(select(BalanceTransaction), BalanceTransaction.available_on, selected)
-    ).all()
-    reportable_transactions = [
-        transaction
-        for transaction in transaction_rows
-        if (
-            transaction.status == "succeeded"
-            if transaction.type == "charge"
-            else transaction.charge_id is not None
+
+    is_reportable_tx = or_(
+        and_(BalanceTransaction.type == "charge", BalanceTransaction.status == "succeeded"),
+        and_(BalanceTransaction.type == "refund", BalanceTransaction.charge_id.isnot(None)),
+    )
+
+    tx_row = session.execute(
+        filter_dates(
+            select(
+                func.coalesce(func.sum(case((is_reportable_tx, BalanceTransaction.net), else_=0)), 0),
+                func.coalesce(func.sum(case((and_(is_reportable_tx, BalanceTransaction.type == "charge"), BalanceTransaction.amount), else_=0)), 0),
+                func.coalesce(func.sum(case((and_(is_reportable_tx, BalanceTransaction.type == "refund"), BalanceTransaction.amount), else_=0)), 0),
+                func.coalesce(func.sum(case((is_reportable_tx, BalanceTransaction.application_fee), else_=0)), 0),
+                func.coalesce(func.sum(case((is_reportable_tx, BalanceTransaction.stripe_fee), else_=0)), 0),
+                func.coalesce(func.sum(case((and_(BalanceTransaction.type == "refund", BalanceTransaction.charge_id.is_(None)), 1), else_=0)), 0),
+            ),
+            BalanceTransaction.available_on,
+            selected,
         )
-    ]
+    ).one()
 
-    payout_rows = session.scalars(
-        filter_dates(select(Payout), Payout.arrival_date, selected)
-    ).all()
-    reportable_payouts = [
-        payout
-        for payout in payout_rows
-        if payout.is_reconciled
-    ]
+    net_revenue, gross_sales, refunds, tt_fees, stripe_fees, excluded_transactions = tx_row
 
-    net_revenue = sum(transaction.net for transaction in reportable_transactions)
-    completed = sum(
-        payout.amount
-        for payout in reportable_payouts
-        if payout.status == "paid" and payout.arrival_date <= selected.today
-    )
-    available = sum(
-        payout.amount
-        for payout in reportable_payouts
-        if payout.status == "unpaid" and payout.arrival_date <= selected.today
-    )
+    payout_row = session.execute(
+        filter_dates(
+            select(
+                func.coalesce(func.sum(case((and_(Payout.is_reconciled, Payout.status == "paid", Payout.arrival_date <= selected.today), Payout.amount), else_=0)), 0),
+                func.coalesce(func.sum(case((and_(Payout.is_reconciled, Payout.status == "unpaid", Payout.arrival_date <= selected.today), Payout.amount), else_=0)), 0),
+                func.coalesce(func.sum(case((~Payout.is_reconciled, 1), else_=0)), 0),
+            ),
+            Payout.arrival_date,
+            selected,
+        )
+    ).one()
+
+    completed, available, excluded_payouts = payout_row
+
     schedule = [
         {
-            "id": payout.id,
-            "amount": payout.amount,
-            "currency": payout.currency,
-            "status": payout.status,
-            "arrival_date": payout.arrival_date.isoformat(),
+            "id": row.id,
+            "amount": row.amount,
+            "currency": row.currency,
+            "status": row.status,
+            "arrival_date": row.arrival_date.isoformat(),
         }
-        for payout in sorted(reportable_payouts, key=lambda item: (item.arrival_date, item.id))
-        if payout.status != "paid"
+        for row in session.scalars(
+            filter_dates(
+                select(Payout)
+                .where(Payout.is_reconciled)
+                .where(Payout.status != "paid")
+                .order_by(Payout.arrival_date, Payout.id),
+                Payout.arrival_date,
+                selected,
+            )
+        ).all()
     ]
-    excluded_transactions = sum(
-        transaction.type == "refund" and transaction.charge_id is None
-        for transaction in transaction_rows
-    )
-    excluded_payouts = sum(not payout.is_reconciled for payout in payout_rows)
+
     return {
         "currency": "GBP",
         "period": selected.as_dict(),
@@ -239,22 +247,10 @@ def overview(
             "pending": net_revenue - completed - available,
         },
         "revenue_breakdown": {
-            "gross_sales": sum(
-                transaction.amount
-                for transaction in reportable_transactions
-                if transaction.type == "charge"
-            ),
-            "refunds": sum(
-                transaction.amount
-                for transaction in reportable_transactions
-                if transaction.type == "refund"
-            ),
-            "ticket_tailor_fees": sum(
-                transaction.application_fee for transaction in reportable_transactions
-            ),
-            "stripe_fees": sum(
-                transaction.stripe_fee for transaction in reportable_transactions
-            ),
+            "gross_sales": gross_sales,
+            "refunds": refunds,
+            "ticket_tailor_fees": tt_fees,
+            "stripe_fees": stripe_fees,
             "net_revenue": net_revenue,
         },
         "payout_schedule": schedule,
