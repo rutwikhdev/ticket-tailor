@@ -4,6 +4,12 @@ services:
       context: ./backend
     ports:
       - "8000:8000"
+    environment:
+      DATABASE_URL: sqlite:////data/ticket_tailor.db
+    volumes:
+      - backend_data:/data
+      - ./records.json:/fixtures/records.json:ro
+      - ./records2.json:/fixtures/records2.json:ro
     healthcheck:
       test:
         - CMD
@@ -27,3 +33,6 @@ services:
         condition: service_healthy
     ports:
       - "3000:3000"
+
+volumes:
+  backend_data:

@@ -1,0 +1,324 @@
+[
+  {
+    "id": "po_1003",
+    "object": "payout",
+    "created": "2026-09-02T06:45:00Z",
+    "amount": 12706,
+    "currency": "gbp",
+    "status": "unpaid",
+    "arrival_date": "2026-12-31",
+    "included_balance_transactions": [
+      "ch_1006",
+      "ch_1007",
+      "ch_1008",
+      "ch_1009",
+      "ch_1010"
+    ]
+  },
+  {
+    "id": "re_1001",
+    "object": "refund",
+    "created": "2026-09-02T08:05:00Z",
+    "charge": "ch_1002",
+    "amount": 1200,
+    "currency": "gbp",
+    "fee_details": [
+      {
+        "type": "application_fee",
+        "amount": -40
+      }
+    ],
+    "net": -1160,
+    "available_on": "2026-09-02"
+  },
+  {
+    "id": "ch_1004",
+    "object": "charge",
+    "created": "2026-09-02T07:12:00Z",
+    "amount": 4500,
+    "currency": "gbp",
+    "status": "succeeded",
+    "order_ref": "TT-5004",
+    "fee_details": [
+      {
+        "type": "stripe_fee",
+        "amount": 83
+      },
+      {
+        "type": "application_fee",
+        "amount": 120
+      }
+    ],
+    "net": 4297,
+    "available_on": "2026-09-05"
+  },
+  {
+    "id": "po_1002",
+    "object": "payout",
+    "created": "2026-09-02T07:30:00Z",
+    "amount": 5696,
+    "currency": "gbp",
+    "status": "unpaid",
+    "arrival_date": "2026-09-05",
+    "included_balance_transactions": [
+      "ch_1004",
+      "ch_1005"
+    ]
+  },
+  {
+    "id": "ch_1001",
+    "object": "charge",
+    "created": "2026-08-31T17:45:00Z",
+    "amount": 5000,
+    "currency": "gbp",
+    "status": "succeeded",
+    "order_ref": "TT-5001",
+    "fee_details": [
+      {
+        "type": "stripe_fee",
+        "amount": 95
+      },
+      {
+        "type": "application_fee",
+        "amount": 150
+      }
+    ],
+    "net": 4755,
+    "available_on": "2026-09-01"
+  },
+  {
+    "id": "po_1000",
+    "object": "payout",
+    "created": "2026-09-01T12:00:00Z",
+    "amount": 4755,
+    "currency": "gbp",
+    "status": "paid",
+    "arrival_date": "2026-09-01",
+    "included_balance_transactions": [
+      "ch_1001"
+    ]
+  },
+  {
+    "id": "ch_1002",
+    "object": "charge",
+    "created": "2026-09-01T10:20:00Z",
+    "amount": 3200,
+    "currency": "gbp",
+    "status": "succeeded",
+    "order_ref": "TT-5002",
+    "fee_details": [
+      {
+        "type": "stripe_fee",
+        "amount": 65
+      },
+      {
+        "type": "application_fee",
+        "amount": 94
+      }
+    ],
+    "net": 3041,
+    "available_on": "2026-09-02"
+  },
+  {
+    "id": "ch_1003",
+    "object": "charge",
+    "created": "2026-09-01T14:40:00Z",
+    "amount": 2500,
+    "currency": "gbp",
+    "status": "succeeded",
+    "order_ref": "TT-5003",
+    "fee_details": [
+      {
+        "type": "stripe_fee",
+        "amount": 55
+      },
+      {
+        "type": "application_fee",
+        "amount": 80
+      }
+    ],
+    "net": 2365,
+    "available_on": "2026-09-02"
+  },
+  {
+    "id": "po_1001",
+    "object": "payout",
+    "created": "2026-09-02T06:30:00Z",
+    "amount": 5406,
+    "currency": "gbp",
+    "status": "unpaid",
+    "arrival_date": "2026-09-02",
+    "included_balance_transactions": [
+      "ch_1002",
+      "ch_1003"
+    ]
+  },
+  {
+    "id": "ch_1006",
+    "object": "charge",
+    "created": "2026-09-02T08:25:00Z",
+    "amount": 800,
+    "currency": "gbp",
+    "status": "succeeded",
+    "order_ref": "TT-5006",
+    "fee_details": [
+      {
+        "type": "stripe_fee",
+        "amount": 31
+      },
+      {
+        "type": "application_fee",
+        "amount": 46
+      }
+    ],
+    "net": 723,
+    "available_on": "2026-09-04"
+  },
+  {
+    "id": "ch_1011",
+    "object": "charge",
+    "created": "2026-09-02T08:52:00Z",
+    "amount": 4500,
+    "currency": "gbp",
+    "status": "pending",
+    "order_ref": "TT-5011",
+    "fee_details": [
+      {
+        "type": "stripe_fee",
+        "amount": 83
+      },
+      {
+        "type": "application_fee",
+        "amount": 120
+      }
+    ],
+    "net": 4297,
+    "available_on": "2026-09-06"
+  },
+  {
+    "id": "ch_1012",
+    "object": "charge",
+    "created": "2026-09-02T09:10:00Z",
+    "amount": 2500,
+    "currency": "gbp",
+    "status": "failed",
+    "order_ref": "TT-5012",
+    "fee_details": [
+      {
+        "type": "stripe_fee",
+        "amount": 55
+      },
+      {
+        "type": "application_fee",
+        "amount": 80
+      }
+    ],
+    "net": 2365,
+    "available_on": "2026-09-02"
+  },
+  {
+    "id": "ch_1007",
+    "object": "charge",
+    "created": "2026-09-02T09:35:00Z",
+    "amount": 6000,
+    "currency": "gbp",
+    "status": "succeeded",
+    "order_ref": "TT-5007",
+    "fee_details": [
+      {
+        "type": "stripe_fee",
+        "amount": 110
+      },
+      {
+        "type": "application_fee",
+        "amount": 180
+      }
+    ],
+    "net": 5710,
+    "available_on": "2026-09-07"
+  },
+  {
+    "id": "ch_1005",
+    "object": "charge",
+    "created": "2026-09-02T10:05:00Z",
+    "amount": 1500,
+    "currency": "gbp",
+    "status": "succeeded",
+    "order_ref": "TT-5005",
+    "fee_details": [
+      {
+        "type": "stripe_fee",
+        "amount": 41
+      },
+      {
+        "type": "application_fee",
+        "amount": 60
+      }
+    ],
+    "net": 1399,
+    "available_on": "2026-09-05"
+  },
+  {
+    "id": "ch_1008",
+    "object": "charge",
+    "created": "2026-09-02T10:42:00Z",
+    "amount": 2200,
+    "currency": "gbp",
+    "status": "succeeded",
+    "order_ref": "TT-5008",
+    "fee_details": [
+      {
+        "type": "stripe_fee",
+        "amount": 50
+      },
+      {
+        "type": "application_fee",
+        "amount": 75
+      }
+    ],
+    "net": 2075,
+    "available_on": "2026-09-08"
+  },
+  {
+    "id": "ch_1009",
+    "object": "charge",
+    "created": "2026-09-02T11:18:00Z",
+    "amount": 1250,
+    "currency": "gbp",
+    "status": "succeeded",
+    "order_ref": "TT-5009",
+    "fee_details": [
+      {
+        "type": "stripe_fee",
+        "amount": 38
+      },
+      {
+        "type": "application_fee",
+        "amount": 55
+      }
+    ],
+    "net": 1157,
+    "available_on": "2026-09-09"
+  },
+  {
+    "id": "ch_1010",
+    "object": "charge",
+    "created": "2026-09-02T12:04:00Z",
+    "amount": 3200,
+    "currency": "gbp",
+    "status": "succeeded",
+    "order_ref": "TT-5010",
+    "fee_details": [
+      {
+        "type": "stripe_fee",
+        "amount": 65
+      },
+      {
+        "type": "application_fee",
+        "amount": 94
+      }
+    ],
+    "net": 3041,
+    "available_on": "2026-09-10"
+  }
+]
