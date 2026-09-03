@@ -1,6 +1,11 @@
-# Ticket Tailor Revenue Dashboard
+# Ticket Tailor
 
-A full-stack dashboard for reviewing ticket revenue, fees, refunds, and Stripe payouts. Webhook fixture records are reconciled in FastAPI and reported through a Nuxt UI frontend.
+<img width="1388" height="854" alt="beautiful-screenshot-1788465422370" src="https://github.com/user-attachments/assets/8de23dfe-53fb-4c83-8e84-70bd09a8af0c" />
+
+<img width="1388" height="854" alt="beautiful-screenshot-1788465616354" src="https://github.com/user-attachments/assets/7c27d08b-71bf-441c-9190-db22708e0880" />
+
+<img width="1388" height="854" alt="beautiful-screenshot-1788465624509" src="https://github.com/user-attachments/assets/ac3ddf4e-0d1c-48aa-985e-f34e2cf3ae14" />
+
 
 ## Running the project with Docker Compose
 
