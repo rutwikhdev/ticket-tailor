@@ -36,3 +36,8 @@ export function formatDateOnly(value: string | null | undefined): string {
 export function formatStatus(value: string): string {
   return value.replaceAll('_', ' ').replace(/\b\w/g, character => character.toUpperCase())
 }
+
+export function reportingLabel(item: { included_in_reporting: boolean; reconciled: boolean }): string {
+  if (item.included_in_reporting) return 'Included'
+  return item.reconciled ? 'Excluded' : 'Unreconciled'
+}

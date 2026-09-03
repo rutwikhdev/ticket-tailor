@@ -11,6 +11,9 @@ export type TransactionKind = 'sale' | 'refund'
 export type PayoutStatusFilter = 'all' | 'paid' | 'unpaid' | 'processing'
 export type PayoutStatus = Exclude<PayoutStatusFilter, 'all'>
 
+export const VALID_PERIODS: ReportPeriod[] = ['today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month', 'all_time']
+export const VALID_KINDS: TransactionKind[] = ['sale', 'refund']
+
 export interface ReportPeriodDetails {
   key: ReportPeriod
   timezone: string

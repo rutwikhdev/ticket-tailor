@@ -8,25 +8,22 @@ const navigationItems = computed<NavigationMenuItem[]>(() => {
   const period = typeof route.query.period === 'string' ? route.query.period : undefined
   const to = (path: string) => ({ path, query: period ? { period } : {} })
 
-  return [
+    return [
     {
       label: 'Overview',
       icon: 'i-lucide-house',
       to: to('/'),
       exact: true,
-      onSelect: () => { mobileNavigationOpen.value = false },
     },
     {
       label: 'Transactions',
       icon: 'i-lucide-receipt-text',
       to: to('/transactions'),
-      onSelect: () => { mobileNavigationOpen.value = false },
     },
     {
       label: 'Payouts',
       icon: 'i-lucide-landmark',
       to: to('/payouts'),
-      onSelect: () => { mobileNavigationOpen.value = false },
     },
   ]
 })

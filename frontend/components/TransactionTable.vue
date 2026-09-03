@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 import type { Transaction } from '~/lib/api'
-import { formatDateOnly, formatMoney, formatStatus } from '~/utils/formatters'
+import { formatDateOnly, formatMoney, formatStatus, reportingLabel } from '~/utils/formatters'
 
 const props = withDefaults(defineProps<{
   items?: Transaction[]
@@ -29,11 +29,6 @@ const visibleColumns = computed(() => props.compact
   ? columns.filter(column => !('accessorKey' in column) || !['stripe_fee', 'ticket_tailor_fee', 'included_in_reporting'].includes(String(column.accessorKey)))
   : columns,
 )
-
-function reportingLabel(transaction: Transaction): string {
-  if (transaction.included_in_reporting) return 'Included'
-  return transaction.reconciled ? 'Excluded' : 'Unreconciled'
-}
 
 function formatFee(value: number, currency: string): string {
   return formatMoney(value === 0 ? 0 : -value, currency)

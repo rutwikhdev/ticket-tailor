@@ -1,23 +1,18 @@
 <script setup lang="ts">
 import type { ReportPeriod, ReportPeriodDetails, TransactionKind } from '~/lib/api'
-import { useApi } from '~/lib/api'
+import { useApi, VALID_KINDS, VALID_PERIODS } from '~/lib/api'
 import { formatDateOnly, formatMoney, formatStatus } from '~/utils/formatters'
+import { queryValue } from '~/utils/query'
 
 useSeoMeta({ title: 'Revenue overview' })
 
 const route = useRoute()
 const api = useApi()
-const validPeriods: ReportPeriod[] = ['today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month', 'all_time']
-const validKinds: TransactionKind[] = ['sale', 'refund']
-
-function queryValue(value: unknown): string | undefined {
-  return Array.isArray(value) ? String(value[0]) : typeof value === 'string' ? value : undefined
-}
 
 const period = computed<ReportPeriod>({
   get() {
     const value = queryValue(route.query.period) as ReportPeriod | undefined
-    return value && validPeriods.includes(value) ? value : 'all_time'
+    return value && VALID_PERIODS.includes(value) ? value : 'all_time'
   },
   set(value) {
     void navigateTo({
@@ -30,7 +25,7 @@ const period = computed<ReportPeriod>({
 const recentKind = computed<TransactionKind>({
   get() {
     const value = queryValue(route.query.type) as TransactionKind | undefined
-    return value && validKinds.includes(value) ? value : 'sale'
+    return value && VALID_KINDS.includes(value) ? value : 'sale'
   },
   set(value) {
     void navigateTo({

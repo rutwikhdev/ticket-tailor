@@ -1,30 +1,21 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 import type { Payout, PayoutStatusFilter, ReportPeriod } from '~/lib/api'
-import { useApi } from '~/lib/api'
-import { formatDateOnly, formatMoney, formatStatus } from '~/utils/formatters'
+import { useApi, VALID_PERIODS } from '~/lib/api'
+import { formatDateOnly, formatMoney, formatStatus, reportingLabel } from '~/utils/formatters'
+import { queryPage, queryValue } from '~/utils/query'
 
 useSeoMeta({ title: 'Payouts' })
 
 const route = useRoute()
 const api = useApi()
 const pageSize = 20
-const validPeriods: ReportPeriod[] = ['today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month', 'all_time']
 const validStatuses: PayoutStatusFilter[] = ['all', 'paid', 'unpaid', 'processing']
-
-function queryValue(value: unknown): string | undefined {
-  return Array.isArray(value) ? String(value[0]) : typeof value === 'string' ? value : undefined
-}
-
-function queryPage(value: unknown): number {
-  const parsed = Number(queryValue(value))
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1
-}
 
 const period = computed<ReportPeriod>({
   get() {
     const value = queryValue(route.query.period) as ReportPeriod | undefined
-    return value && validPeriods.includes(value) ? value : 'all_time'
+    return value && VALID_PERIODS.includes(value) ? value : 'all_time'
   },
   set(value) {
     void navigateTo({ path: route.path, query: { ...route.query, period: value === 'all_time' ? undefined : value, page: undefined } })
@@ -70,24 +61,9 @@ const columns: TableColumn<Payout>[] = [
   { accessorKey: 'included_in_reporting', header: 'Reporting' },
 ]
 
-const resultStart = computed(() => payouts.data.value?.total
-  && payouts.data.value.items.length
-  ? ((payouts.data.value.page - 1) * payouts.data.value.page_size) + 1
-  : 0,
-)
-const resultEnd = computed(() => payouts.data.value?.items.length
-  ? Math.min(payouts.data.value.page * payouts.data.value.page_size, payouts.data.value.total)
-  : 0,
-)
-
 watch(() => payouts.data.value?.page_count, (pageCount) => {
   if (pageCount && page.value > pageCount) page.value = pageCount
 })
-
-function reportingLabel(payout: Payout): string {
-  if (payout.included_in_reporting) return 'Included'
-  return payout.reconciled ? 'Excluded' : 'Unreconciled'
-}
 </script>
 
 <template>
@@ -204,22 +180,13 @@ function reportingLabel(payout: Payout): string {
       </div>
       </div>
 
-      <footer
-        v-if="payouts.data.value && payouts.data.value.total > 0"
-        class="flex flex-col gap-4 border-t border-default px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <p class="financial-number text-xs text-muted">
-          Showing {{ resultStart }}-{{ resultEnd }} of {{ payouts.data.value.total }}
-        </p>
-        <UPagination
-          :page="page"
-          :total="payouts.data.value.total"
-          :items-per-page="payouts.data.value.page_size"
-          :sibling-count="1"
-          size="sm"
-          @update:page="page = $event"
-        />
-      </footer>
+      <PaginationFooter
+        v-if="payouts.data.value"
+        :page="page"
+        :total="payouts.data.value.total"
+        :page-size="payouts.data.value.page_size"
+        @update:page="page = $event"
+      />
     </section>
   </div>
 </template>
