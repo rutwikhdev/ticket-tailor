@@ -16,9 +16,7 @@ Install the backend dependencies and ingest the supplied webhook fixtures:
 cd backend
 uv sync --extra dev
 uv run python -m src.webhook ../records.json ../records2.json
-uv run python -m uvicorn app:app --reload --port 8000
 uv run uvicorn app:app --reload --port 8000
-# alternative
 ```
 
 The seed command is explicit and safe to rerun. Existing events with equal or older source timestamps are logged but do not replace current records.
@@ -56,13 +54,20 @@ Start both services with one command from the project root:
 docker compose up --build
 ```
 
-Seed the persistent container database after the services are running:
+The backend seeds the `records.json` and `records2.json` fixtures into the persistent database automatically on startup before serving the API. Seeding is idempotent: the first start of a fresh database fits the fixtures (expect a `created=82 stale=2 invalid=0` summary in the backend logs); later restarts report `stale=N` as existing records are skipped, which is expected and does not mean fixtures failed — the data is persisted in the `backend_data` volume.
+
+Both services are published to the host: the frontend at `http://localhost:3000` and the API at `http://localhost:8000`. The frontend calls the API from the browser at `http://localhost:8000` (see `NUXT_PUBLIC_API_BASE_URL`); the backend container is reachable over the compose network at `http://backend:8000` for server-side calls (`NUXT_API_BASE_URL`).
+
+Because `allow_credentials=True`, the backend reflects the browser's `Origin` header back instead of echoing a fixed list, so CORS works no matter which host the frontend is opened on (localhost, `127.0.0.1`, a LAN IP, or a custom hostname). To restrict to specific origins instead, set `CORS_ORIGINS` (comma-separated) as an environment variable on the backend service; when set, only those origins are allowed.
+
+If you change config or stale containers/volumes cause odd behaviour, start from a clean state:
 
 ```bash
-docker compose exec backend python -m src.webhook /fixtures/records.json /fixtures/records2.json
+docker compose down -v
+docker compose up --build
 ```
 
-The frontend is available at `http://localhost:3000` and the API at `http://localhost:8000`. SQLite data is retained in the `backend_data` volume. Use `docker compose down -v` when a clean database is required.
+`docker compose down -v` also wipes the `backend_data` volume so fixtures are reseeded on the next start.
 
 ## API
 
