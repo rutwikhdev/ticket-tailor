@@ -1,70 +1,331 @@
 <script setup lang="ts">
-interface HealthResponse {
-  status: 'ok'
-  service: string
-  message: string
+import type { ReportPeriod, ReportPeriodDetails, TransactionKind } from '~/lib/api'
+import { useApi } from '~/lib/api'
+import { formatDateOnly, formatMoney, formatStatus } from '~/utils/formatters'
+
+useSeoMeta({ title: 'Revenue overview' })
+
+const route = useRoute()
+const api = useApi()
+const validPeriods: ReportPeriod[] = ['today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month', 'all_time']
+const validKinds: TransactionKind[] = ['sale', 'refund']
+
+function queryValue(value: unknown): string | undefined {
+  return Array.isArray(value) ? String(value[0]) : typeof value === 'string' ? value : undefined
 }
 
-const { request } = useApi()
-const { data, error, pending, refresh } = await useAsyncData('api-health', () =>
-  request<HealthResponse>('/api/health'),
+const period = computed<ReportPeriod>({
+  get() {
+    const value = queryValue(route.query.period) as ReportPeriod | undefined
+    return value && validPeriods.includes(value) ? value : 'all_time'
+  },
+  set(value) {
+    void navigateTo({
+      path: route.path,
+      query: { ...route.query, period: value === 'all_time' ? undefined : value },
+    })
+  },
+})
+
+const recentKind = computed<TransactionKind>({
+  get() {
+    const value = queryValue(route.query.type) as TransactionKind | undefined
+    return value && validKinds.includes(value) ? value : 'sale'
+  },
+  set(value) {
+    void navigateTo({
+      path: route.path,
+      query: { ...route.query, type: value === 'sale' ? undefined : value },
+    })
+  },
+})
+
+const timezone = ref(import.meta.client ? Intl.DateTimeFormat().resolvedOptions().timeZone : '')
+
+const overview = useClientData(
+  () => api.getOverview({ period: period.value, timezone: timezone.value }),
+  [period, timezone],
 )
+
+const recent = useClientData(
+  () => api.getTransactions({
+    kind: recentKind.value,
+    period: period.value,
+    timezone: timezone.value,
+    page: 1,
+    page_size: 8,
+  }),
+  [recentKind, period, timezone],
+)
+
+const recentTabs = [
+  { label: 'Sales', value: 'sale' },
+  { label: 'Refunds', value: 'refund' },
+] satisfies { label: string; value: TransactionKind }[]
+
+const scheduledPayouts = computed(() =>
+  (overview.data.value?.payout_schedule || []).slice(0, 5),
+)
+
+function deduction(value: number, currency: string): string {
+  return value === 0 ? formatMoney(0, currency) : `-${formatMoney(Math.abs(value), currency)}`
+}
+
+function feeDeduction(value: number, currency: string): string {
+  return formatMoney(value === 0 ? 0 : -value, currency)
+}
+
+function periodRange(details: ReportPeriodDetails | undefined): string {
+  if (!details) return 'Loading reporting period...'
+  if (!details.start_date) return `All recorded activity in ${details.timezone}`
+  if (!details.end_date_exclusive) return `From ${formatDateOnly(details.start_date)}`
+
+  const end = new Date(`${details.end_date_exclusive}T00:00:00Z`)
+  end.setUTCDate(end.getUTCDate() - 1)
+  const inclusiveEnd = end.toISOString().slice(0, 10)
+  return `${formatDateOnly(details.start_date)} to ${formatDateOnly(inclusiveEnd)} in ${details.timezone}`
+}
 </script>
 
 <template>
-  <main class="min-h-screen overflow-hidden">
-    <div class="mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-8 lg:px-12 lg:py-10">
-      <header class="flex items-center justify-between border-b border-black/10 pb-6">
-        <div class="flex items-center gap-3">
-          <span class="grid size-9 place-items-center rounded-full bg-[var(--ink)] text-sm font-bold text-[var(--lime)]">FT</span>
-          <span class="font-mono text-xs font-medium uppercase tracking-[0.2em]">Fast / Nuxt</span>
+  <div class="space-y-6">
+    <header class="flex flex-col gap-4 border-b border-default pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-xl font-semibold text-highlighted">Overview</h1>
+          <UBadge v-if="overview.pending.value && overview.data.value" label="Refreshing" color="neutral" variant="subtle" size="sm" />
         </div>
-        <span class="font-mono text-xs uppercase tracking-widest text-black/50">Starter 001</span>
-      </header>
+        <p class="mt-2 text-sm text-muted">{{ periodRange(overview.data.value?.period) }}</p>
+      </div>
+      <PeriodFilter v-model="period" />
+    </header>
 
-      <section class="grid flex-1 items-center gap-12 py-16 lg:grid-cols-[1.15fr_0.85fr] lg:gap-24">
-        <div>
-          <p class="mb-6 font-mono text-xs uppercase tracking-[0.25em] text-black/50">Full-stack workspace</p>
-          <h1 class="max-w-3xl text-5xl font-extrabold leading-[0.98] tracking-[-0.06em] sm:text-7xl">
-            A clean line between <span class="text-[#8aa735]">idea</span> and interface.
-          </h1>
-          <p class="mt-8 max-w-xl text-lg leading-8 text-black/60">
-            A minimal FastAPI backend and Nuxt frontend, connected through one typed request layer and ready to grow with your product.
-          </p>
-          <div class="mt-10 flex flex-wrap gap-3">
-            <UButton to="https://fastapi.tiangolo.com" target="_blank" size="lg" color="neutral" label="Explore FastAPI" trailing-icon="i-lucide-arrow-up-right" />
-            <UButton to="https://nuxt.com" target="_blank" size="lg" variant="outline" color="neutral" label="Read Nuxt docs" trailing-icon="i-lucide-arrow-up-right" />
-          </div>
+    <UAlert
+      v-if="overview.error.value"
+      role="alert"
+      title="Overview could not be refreshed"
+      :description="overview.error.value"
+      icon="i-lucide-circle-alert"
+      color="error"
+      variant="subtle"
+    >
+      <template #actions>
+        <UButton label="Retry" color="error" variant="soft" size="xs" @click="overview.refresh" />
+      </template>
+    </UAlert>
+
+    <template v-if="overview.data.value">
+      <section aria-labelledby="summary-heading">
+        <h2 id="summary-heading" class="sr-only">Revenue summary</h2>
+        <div class="grid gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-4">
+          <UCard>
+            <div class="flex items-start justify-between gap-3">
+              <p class="text-xs font-normal uppercase text-muted">Net revenue</p>
+              <span class="flex rounded-full bg-primary/10 p-2 text-primary ring ring-inset ring-primary/25">
+                <UIcon name="i-lucide-circle-pound-sterling" class="size-4" />
+              </span>
+            </div>
+            <p class="financial-number mt-2 text-2xl font-semibold text-highlighted">
+              {{ formatMoney(overview.data.value.summary.net_revenue, overview.data.value.currency) }}
+            </p>
+            <p class="mt-2 text-xs text-muted">After refunds and fees</p>
+          </UCard>
+          <UCard>
+            <div class="flex items-start justify-between gap-3">
+              <p class="text-xs font-normal uppercase text-muted">Payouts completed</p>
+              <span class="flex rounded-full bg-primary/10 p-2 text-primary ring ring-inset ring-primary/25">
+                <UIcon name="i-lucide-circle-check" class="size-4" />
+              </span>
+            </div>
+            <p class="financial-number mt-2 text-2xl font-semibold text-highlighted">
+              {{ formatMoney(overview.data.value.summary.payouts_completed, overview.data.value.currency) }}
+            </p>
+            <p class="mt-2 text-xs text-muted">Funds already sent</p>
+          </UCard>
+          <UCard>
+            <div class="flex items-start justify-between gap-3">
+              <p class="text-xs font-normal uppercase text-muted">Available to payout</p>
+              <span class="flex rounded-full bg-primary/10 p-2 text-primary ring ring-inset ring-primary/25">
+                <UIcon name="i-lucide-wallet-cards" class="size-4" />
+              </span>
+            </div>
+            <p class="financial-number mt-2 text-2xl font-semibold text-highlighted">
+              {{ formatMoney(overview.data.value.summary.available_to_payout, overview.data.value.currency) }}
+            </p>
+            <p class="mt-2 text-xs text-muted">Unpaid and due now</p>
+          </UCard>
+          <UCard>
+            <div class="flex items-start justify-between gap-3">
+              <p class="text-xs font-normal uppercase text-muted">Pending</p>
+              <span class="flex rounded-full bg-primary/10 p-2 text-primary ring ring-inset ring-primary/25">
+                <UIcon name="i-lucide-clock-3" class="size-4" />
+              </span>
+            </div>
+            <p class="financial-number mt-2 text-2xl font-semibold text-highlighted">
+              {{ formatMoney(overview.data.value.summary.pending, overview.data.value.currency) }}
+            </p>
+            <p class="mt-2 text-xs text-muted">Not yet available</p>
+          </UCard>
         </div>
-
-        <aside class="relative rounded-3xl bg-[var(--ink)] p-7 text-white shadow-2xl shadow-black/10 sm:p-9">
-          <div class="absolute -right-3 -top-3 size-16 rounded-full border-[10px] border-[var(--paper)] bg-[var(--lime)]" />
-          <div class="flex items-center justify-between border-b border-white/15 pb-6">
-            <span class="font-mono text-xs uppercase tracking-[0.2em] text-white/50">Connection check</span>
-            <UBadge v-if="data" color="success" variant="subtle" label="Online" />
-            <UBadge v-else-if="pending" color="warning" variant="subtle" label="Checking" />
-            <UBadge v-else color="error" variant="subtle" label="Offline" />
-          </div>
-
-          <div class="py-12">
-            <p class="font-mono text-xs uppercase tracking-[0.2em] text-white/40">GET /api/health</p>
-            <p v-if="data" class="mt-5 text-2xl font-semibold tracking-tight">{{ data.message }}</p>
-            <p v-else-if="pending" class="mt-5 text-2xl font-semibold tracking-tight text-white/60">Talking to the API...</p>
-            <p v-else class="mt-5 text-2xl font-semibold tracking-tight text-red-300">The API could not be reached.</p>
-          </div>
-
-          <div class="flex items-center justify-between border-t border-white/15 pt-6">
-            <span class="font-mono text-xs text-white/40">Typed through useApi&lt;T&gt;</span>
-            <UButton v-if="error" variant="link" color="primary" label="Retry" @click="() => refresh()" />
-            <span v-else class="font-mono text-xs text-[var(--lime)]">200 / OK</span>
-          </div>
-        </aside>
       </section>
 
-      <footer class="flex flex-col gap-3 border-t border-black/10 pt-5 text-xs text-black/45 sm:flex-row sm:items-center sm:justify-between">
-        <span>TypeScript on the client. Python on the server.</span>
-        <span class="font-mono">localhost:3000 → localhost:8000</span>
-      </footer>
-    </div>
-  </main>
+      <UAlert
+        v-if="overview.data.value.excluded_unreconciled_count > 0"
+        title="Some activity is excluded"
+        :description="`${overview.data.value.excluded_unreconciled_count} unreconciled ${overview.data.value.excluded_unreconciled_count === 1 ? 'record is' : 'records are'} not included in these totals.`"
+        icon="i-lucide-triangle-alert"
+        color="warning"
+        variant="subtle"
+      />
+    </template>
+
+    <section v-if="overview.pending.value && !overview.data.value" aria-label="Loading revenue summary" class="grid gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-4">
+      <div v-for="index in 4" :key="index" class="rounded-lg border border-default bg-elevated/25 p-5">
+        <USkeleton class="h-4 w-28" />
+        <USkeleton class="mt-4 h-8 w-36" />
+        <USkeleton class="mt-3 h-3 w-24" />
+      </div>
+    </section>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+        <section aria-labelledby="breakdown-heading">
+          <div class="mb-4">
+            <h2 id="breakdown-heading" class="text-base font-semibold text-highlighted">Revenue breakdown</h2>
+            <p class="mt-1 text-sm text-muted">How gross ticket sales become net revenue.</p>
+          </div>
+
+          <UCard v-if="overview.data.value" class="bg-elevated/25" :ui="{ body: 'p-0 sm:p-0' }">
+            <dl class="divide-y divide-default">
+              <div class="flex items-center justify-between gap-4 px-5 py-4">
+                <dt class="text-sm text-muted">Gross ticket sales</dt>
+                <dd class="financial-number text-sm font-semibold text-highlighted">{{ formatMoney(overview.data.value.revenue_breakdown.gross_sales, overview.data.value.currency) }}</dd>
+              </div>
+              <div class="flex items-center justify-between gap-4 px-5 py-4">
+                <dt class="text-sm text-muted">Refunds</dt>
+                <dd class="financial-number text-sm font-medium text-default">{{ deduction(overview.data.value.revenue_breakdown.refunds, overview.data.value.currency) }}</dd>
+              </div>
+              <div class="flex items-center justify-between gap-4 px-5 py-4">
+                <dt class="text-sm text-muted">Ticket Tailor fees</dt>
+                <dd class="financial-number text-sm font-medium text-default">{{ feeDeduction(overview.data.value.revenue_breakdown.ticket_tailor_fees, overview.data.value.currency) }}</dd>
+              </div>
+              <div class="flex items-center justify-between gap-4 px-5 py-4">
+                <dt class="text-sm text-muted">Stripe fees</dt>
+                <dd class="financial-number text-sm font-medium text-default">{{ feeDeduction(overview.data.value.revenue_breakdown.stripe_fees, overview.data.value.currency) }}</dd>
+              </div>
+              <div class="flex items-center justify-between gap-4 bg-primary/5 px-5 py-4">
+                <dt class="text-sm font-semibold text-highlighted">Net revenue</dt>
+                <dd class="financial-number text-base font-semibold text-primary">{{ formatMoney(overview.data.value.revenue_breakdown.net_revenue, overview.data.value.currency) }}</dd>
+              </div>
+            </dl>
+          </UCard>
+
+          <div v-else-if="overview.pending.value" class="rounded-lg border border-default bg-elevated/25 p-5">
+            <USkeleton v-for="row in 5" :key="row" class="mb-4 h-5 w-full last:mb-0" />
+          </div>
+        </section>
+
+        <section aria-labelledby="schedule-heading" class="flex flex-col">
+          <div class="mb-4 flex items-center justify-between gap-4">
+            <div>
+              <h2 id="schedule-heading" class="text-base font-semibold text-highlighted">Payout schedule</h2>
+              <p class="mt-1 text-sm text-muted">Unpaid and processing payouts in the selected period.</p>
+            </div>
+            <UButton
+              v-if="overview.data.value"
+              :to="{ path: '/payouts', query: period === 'all_time' ? {} : { period } }"
+              label="View payouts"
+              trailing-icon="i-lucide-arrow-right"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+            />
+          </div>
+
+          <div v-if="scheduledPayouts.length" class="flex-1 divide-y divide-default overflow-hidden rounded-lg border border-default bg-default">
+            <UCard
+              v-for="payout in scheduledPayouts"
+              :key="payout.id"
+              :ui="{ root: 'rounded-none border-0', body: 'flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4' }"
+            >
+              <div class="flex items-center gap-3">
+                <span class="grid size-9 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+                  <UIcon name="i-lucide-arrow-down-to-line" class="size-4" />
+                </span>
+                <div>
+                  <p class="financial-number font-semibold text-highlighted">{{ formatMoney(payout.amount, payout.currency) }}</p>
+                  <p class="mt-0.5 font-mono text-[11px] text-dimmed">{{ payout.id }}</p>
+                </div>
+              </div>
+              <div class="flex items-center justify-between gap-5 pl-12 sm:justify-end sm:pl-0">
+                <div class="text-right">
+                  <p class="text-xs text-muted">Arrival date</p>
+                  <p class="mt-0.5 text-sm font-medium text-highlighted">{{ formatDateOnly(payout.arrival_date) }}</p>
+                </div>
+                <UBadge :label="formatStatus(payout.status)" color="neutral" variant="subtle" size="sm" />
+              </div>
+            </UCard>
+          </div>
+
+          <div v-else-if="overview.pending.value && !overview.data.value" class="space-y-px overflow-hidden rounded-lg border border-default">
+            <div v-for="index in 3" :key="index" class="flex items-center justify-between bg-default p-5">
+              <div class="flex items-center gap-3"><USkeleton class="size-9" /><USkeleton class="h-5 w-28" /></div>
+              <USkeleton class="h-5 w-32" />
+            </div>
+          </div>
+
+          <div v-else-if="overview.data.value" class="rounded-lg border border-dashed border-default px-5 py-10 text-center">
+            <UIcon name="i-lucide-calendar-check" class="mx-auto size-5 text-dimmed" />
+            <p class="mt-3 text-sm font-medium text-highlighted">No payouts scheduled</p>
+            <p class="mt-1 text-sm text-muted">Upcoming unpaid payouts will appear here.</p>
+          </div>
+        </section>
+      </div>
+
+    <section aria-labelledby="recent-heading" class="border-t border-default pt-8">
+      <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 id="recent-heading" class="text-base font-semibold text-highlighted">Recent transactions</h2>
+          <p class="mt-1 text-sm text-muted">Latest activity by availability date.</p>
+        </div>
+        <UTabs
+          :model-value="recentKind"
+          :items="recentTabs"
+          value-key="value"
+          :content="false"
+          color="neutral"
+          size="sm"
+          class="w-full sm:w-56"
+          @update:model-value="recentKind = $event as TransactionKind"
+        />
+      </div>
+
+      <UAlert
+        v-if="recent.error.value"
+        role="alert"
+        title="Recent transactions could not be refreshed"
+        :description="recent.error.value"
+        icon="i-lucide-circle-alert"
+        color="error"
+        variant="subtle"
+        class="mb-4"
+      >
+        <template #actions>
+          <UButton label="Retry" color="error" variant="soft" size="xs" @click="recent.refresh" />
+        </template>
+      </UAlert>
+
+      <div class="overflow-hidden">
+        <TransactionTable
+          v-if="recent.data.value"
+          :items="recent.data.value.items"
+          :pending="recent.pending.value"
+          compact
+        />
+        <div v-else-if="recent.pending.value" class="p-4">
+          <USkeleton class="h-9 w-full" />
+          <USkeleton v-for="index in 5" :key="index" class="mt-3 h-12 w-full" />
+        </div>
+      </div>
+    </section>
+  </div>
 </template>
