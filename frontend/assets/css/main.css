@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+@import '@nuxt/ui';
+
+:root {
+  --ink: #17211f;
+  --paper: #f5f4ed;
+  --lime: #c7f36b;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Manrope', sans-serif;
+}
+
+::selection {
+  background: var(--lime);
+  color: var(--ink);
+}
