@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 import type { Transaction } from '~/lib/api'
-import { formatDateOnly, formatMoney, formatStatus, reportingLabel } from '~/utils/formatters'
+import { formatDateOnly, formatMoney, formatStatus, statusColor } from '~/utils/formatters'
 
 const props = withDefaults(defineProps<{
   items?: Transaction[]
@@ -22,11 +22,10 @@ const columns: TableColumn<Transaction>[] = [
   { accessorKey: 'net', header: 'Net' },
   { accessorKey: 'available_on', header: 'Available' },
   { accessorKey: 'status', header: 'Status' },
-  { accessorKey: 'included_in_reporting', header: 'Reporting' },
 ]
 
 const visibleColumns = computed(() => props.compact
-  ? columns.filter(column => !('accessorKey' in column) || !['stripe_fee', 'ticket_tailor_fee', 'included_in_reporting'].includes(String(column.accessorKey)))
+  ? columns.filter(column => !('accessorKey' in column) || !['stripe_fee', 'ticket_tailor_fee'].includes(String(column.accessorKey)))
   : columns,
 )
 
@@ -69,7 +68,7 @@ function formatFee(value: number, currency: string): string {
     <template #type-cell="{ row }">
       <UBadge
         :label="formatStatus(row.original.type)"
-        :color="row.original.type === 'sale' ? 'success' : 'neutral'"
+        color="neutral"
         variant="subtle"
         size="sm"
       />
@@ -96,16 +95,14 @@ function formatFee(value: number, currency: string): string {
     </template>
 
     <template #status-cell="{ row }">
-      <span class="text-default">{{ row.original.status ? formatStatus(row.original.status) : 'Not applicable' }}</span>
-    </template>
-
-    <template #included_in_reporting-cell="{ row }">
       <UBadge
-        :label="reportingLabel(row.original)"
-        :color="row.original.included_in_reporting ? 'success' : 'neutral'"
+        v-if="row.original.status"
+        :label="formatStatus(row.original.status)"
+        :color="statusColor(row.original.status)"
         variant="subtle"
         size="sm"
       />
+      <span v-else class="text-muted">Not applicable</span>
     </template>
 
     <template #empty>

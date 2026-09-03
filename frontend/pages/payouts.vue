@@ -2,7 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 import type { Payout, PayoutStatusFilter, ReportPeriod } from '~/lib/api'
 import { useApi, VALID_PERIODS } from '~/lib/api'
-import { formatDateOnly, formatMoney, formatStatus, reportingLabel } from '~/utils/formatters'
+import { formatDateOnly, formatMoney, formatStatus, statusColor } from '~/utils/formatters'
 import { queryPage, queryValue } from '~/utils/query'
 
 useSeoMeta({ title: 'Payouts' })
@@ -58,7 +58,6 @@ const columns: TableColumn<Payout>[] = [
   { accessorKey: 'status', header: 'Status' },
   { accessorKey: 'arrival_date', header: 'Arrival date' },
   { accessorKey: 'transaction_count', header: 'Transactions' },
-  { accessorKey: 'included_in_reporting', header: 'Reporting' },
 ]
 
 watch(() => payouts.data.value?.page_count, (pageCount) => {
@@ -135,7 +134,7 @@ watch(() => payouts.data.value?.page_count, (pageCount) => {
         <template #status-cell="{ row }">
           <UBadge
             :label="formatStatus(row.original.status)"
-            :color="row.original.status === 'paid' ? 'success' : 'neutral'"
+            :color="statusColor(row.original.status)"
             variant="subtle"
             size="sm"
           />
@@ -147,15 +146,6 @@ watch(() => payouts.data.value?.page_count, (pageCount) => {
 
         <template #transaction_count-cell="{ row }">
           <span class="financial-number">{{ row.original.transaction_count }}</span>
-        </template>
-
-        <template #included_in_reporting-cell="{ row }">
-          <UBadge
-            :label="reportingLabel(row.original)"
-            :color="row.original.included_in_reporting ? 'success' : 'neutral'"
-            variant="subtle"
-            size="sm"
-          />
         </template>
 
         <template #empty>

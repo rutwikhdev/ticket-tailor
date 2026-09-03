@@ -120,7 +120,7 @@ function periodRange(details: ReportPeriodDetails | undefined): string {
           </UCard>
           <UCard>
             <div class="flex items-start justify-between gap-3">
-              <p class="text-xs font-normal uppercase text-muted">Payouts completed</p>
+              <p class="text-xs font-normal uppercase text-muted">Paid to You</p>
               <span class="flex rounded-full bg-primary/10 p-2 text-primary ring ring-inset ring-primary/25">
                 <UIcon name="i-lucide-circle-check" class="size-4" />
               </span>
@@ -132,7 +132,7 @@ function periodRange(details: ReportPeriodDetails | undefined): string {
           </UCard>
           <UCard>
             <div class="flex items-start justify-between gap-3">
-              <p class="text-xs font-normal uppercase text-muted">Available to payout</p>
+              <p class="text-xs font-normal uppercase text-muted">Available Soon</p>
               <span class="flex rounded-full bg-primary/10 p-2 text-primary ring ring-inset ring-primary/25">
                 <UIcon name="i-lucide-wallet-cards" class="size-4" />
               </span>
@@ -140,7 +140,7 @@ function periodRange(details: ReportPeriodDetails | undefined): string {
             <p class="financial-number mt-2 text-2xl font-semibold text-highlighted">
               {{ formatMoney(overview.data.value.summary.available_to_payout, overview.data.value.currency) }}
             </p>
-            <p class="mt-2 text-xs text-muted">Unpaid and due now</p>
+            <p class="mt-2 text-xs text-muted">Transferred on arrival date</p>
           </UCard>
           <UCard>
             <div class="flex items-start justify-between gap-3">

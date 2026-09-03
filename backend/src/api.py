@@ -208,7 +208,7 @@ def overview(
         filter_dates(
             select(
                 func.coalesce(func.sum(case((and_(Payout.is_reconciled, Payout.status == "paid", Payout.arrival_date <= selected.today), Payout.amount), else_=0)), 0),
-                func.coalesce(func.sum(case((and_(Payout.is_reconciled, Payout.status == "unpaid", Payout.arrival_date <= selected.today), Payout.amount), else_=0)), 0),
+                func.coalesce(func.sum(case((and_(Payout.is_reconciled, Payout.status == "unpaid"), Payout.amount), else_=0)), 0),
                 func.coalesce(func.sum(case((~Payout.is_reconciled, 1), else_=0)), 0),
             ),
             Payout.arrival_date,

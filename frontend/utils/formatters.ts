@@ -37,7 +37,10 @@ export function formatStatus(value: string): string {
   return value.replaceAll('_', ' ').replace(/\b\w/g, character => character.toUpperCase())
 }
 
-export function reportingLabel(item: { included_in_reporting: boolean; reconciled: boolean }): string {
-  if (item.included_in_reporting) return 'Included'
-  return item.reconciled ? 'Excluded' : 'Unreconciled'
+export function statusColor(status: string): 'success' | 'warning' | 'error' | 'neutral' {
+  const normalized = status.toLowerCase()
+  if (normalized === 'succeeded' || normalized === 'paid') return 'success'
+  if (normalized === 'unpaid' || normalized === 'pending') return 'warning'
+  if (normalized === 'failed' || normalized === 'failure') return 'error'
+  return 'neutral'
 }

@@ -350,8 +350,8 @@ def test_fixture_outcomes_and_reporting_totals(
     assert report["summary"] == {
         "net_revenue": 126_267,
         "payouts_completed": 49_291,
-        "available_to_payout": 5_406,
-        "pending": 71_570,
+        "available_to_payout": 23_808,
+        "pending": 53_168,
     }
     assert report["revenue_breakdown"] == {
         "gross_sales": 146_400,
