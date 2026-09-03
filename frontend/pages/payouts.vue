@@ -92,19 +92,12 @@ watch(() => payouts.data.value?.page_count, (pageCount) => {
       <PeriodFilter v-model="period" />
     </section>
 
-    <UAlert
+    <DataErrorAlert
       v-if="payouts.error.value"
-      role="alert"
+      :error="payouts.error.value"
       title="Payouts could not be refreshed"
-      :description="payouts.error.value"
-      icon="i-lucide-circle-alert"
-      color="error"
-      variant="subtle"
-    >
-      <template #actions>
-        <UButton label="Retry" color="error" variant="soft" size="xs" @click="payouts.refresh" />
-      </template>
-    </UAlert>
+      @retry="payouts.refresh"
+    />
 
     <section aria-label="Payout results" class="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div class="min-h-0 flex-1">

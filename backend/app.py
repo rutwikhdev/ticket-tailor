@@ -5,6 +5,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.api import router
 from src.db import Base, create_database
+from src.errors import (
+    DomainError,
+    domain_error_handler,
+    unhandled_error_handler,
+    validation_error_handler,
+)
 
 
 def create_app(database_url: str | None = None) -> FastAPI:
@@ -13,6 +19,10 @@ def create_app(database_url: str | None = None) -> FastAPI:
         version="0.1.0",
         description="Revenue and payout reporting for a single event organizer.",
     )
+
+    app.add_exception_handler(DomainError, domain_error_handler)
+    app.add_exception_handler(ValueError, validation_error_handler)
+    app.add_exception_handler(Exception, unhandled_error_handler)
 
     engine, session_factory = create_database(
         database_url or os.getenv("DATABASE_URL", "sqlite:///./ticket_tailor.db")

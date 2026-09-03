@@ -95,19 +95,12 @@ function periodRange(details: ReportPeriodDetails | undefined): string {
       <PeriodFilter v-model="period" />
     </header>
 
-    <UAlert
+    <DataErrorAlert
       v-if="overview.error.value"
-      role="alert"
+      :error="overview.error.value"
       title="Overview could not be refreshed"
-      :description="overview.error.value"
-      icon="i-lucide-circle-alert"
-      color="error"
-      variant="subtle"
-    >
-      <template #actions>
-        <UButton label="Retry" color="error" variant="soft" size="xs" @click="overview.refresh" />
-      </template>
-    </UAlert>
+      @retry="overview.refresh"
+    />
 
     <template v-if="overview.data.value">
       <section aria-labelledby="summary-heading">
@@ -294,20 +287,13 @@ function periodRange(details: ReportPeriodDetails | undefined): string {
         />
       </div>
 
-      <UAlert
+      <DataErrorAlert
         v-if="recent.error.value"
-        role="alert"
+        :error="recent.error.value"
         title="Recent transactions could not be refreshed"
-        :description="recent.error.value"
-        icon="i-lucide-circle-alert"
-        color="error"
-        variant="subtle"
         class="mb-4"
-      >
-        <template #actions>
-          <UButton label="Retry" color="error" variant="soft" size="xs" @click="recent.refresh" />
-        </template>
-      </UAlert>
+        @retry="recent.refresh"
+      />
 
       <div class="overflow-hidden">
         <TransactionTable

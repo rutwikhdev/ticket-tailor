@@ -1,11 +1,12 @@
 from collections.abc import Iterator
 from typing import Literal
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response
+from fastapi import APIRouter, Body, Depends, Query, Request, Response
 from sqlalchemy import Select, and_, case, func, or_, select
 from sqlalchemy.orm import Session
 
 from .db import BalanceTransaction, Payout, PayoutTransaction
+from .errors import DomainError
 from .utils import DatePeriod, get_period
 from .webhook import process_delivery
 
@@ -31,7 +32,7 @@ def requested_period(period: str, timezone: str) -> DatePeriod:
     try:
         return get_period(period, timezone)
     except ValueError as error:
-        raise HTTPException(status_code=422, detail=str(error)) from error
+        raise DomainError(str(error), "INVALID_PERIOD", 422) from error
 
 
 def filter_dates(statement: Select, column, period: DatePeriod) -> Select:
@@ -61,7 +62,7 @@ def webhook(
         outcome = process_delivery(session, payload)
     except ValueError as error:
         session.rollback()
-        raise HTTPException(status_code=422, detail=str(error)) from error
+        raise DomainError(str(error), "VALIDATION_ERROR", 422) from error
     response.status_code = 201 if outcome == "created" else 409 if outcome == "stale" else 200
     return {"outcome": outcome}
 

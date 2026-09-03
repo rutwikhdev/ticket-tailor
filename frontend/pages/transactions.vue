@@ -74,19 +74,12 @@ watch(() => transactions.data.value?.page_count, (pageCount) => {
       <PeriodFilter v-model="period" />
     </section>
 
-    <UAlert
+    <DataErrorAlert
       v-if="transactions.error.value"
-      role="alert"
+      :error="transactions.error.value"
       title="Transactions could not be refreshed"
-      :description="transactions.error.value"
-      icon="i-lucide-circle-alert"
-      color="error"
-      variant="subtle"
-    >
-      <template #actions>
-        <UButton label="Retry" color="error" variant="soft" size="xs" @click="transactions.refresh" />
-      </template>
-    </UAlert>
+      @retry="transactions.refresh"
+    />
 
     <section aria-label="Transaction results" class="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div class="min-h-0 flex-1">

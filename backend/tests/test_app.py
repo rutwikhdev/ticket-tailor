@@ -130,6 +130,32 @@ def test_rejects_incorrect_net_and_empty_payout(client: TestClient) -> None:
     assert client.post("/api/webhooks", json=wrong_currency).status_code == 422
 
 
+def test_error_envelope_shape_for_validation(client: TestClient) -> None:
+    wrong_currency = charge("ch_usd")
+    wrong_currency["currency"] = "usd"
+    response = client.post("/api/webhooks", json=wrong_currency)
+    assert response.status_code == 422
+    assert response.json() == {
+        "error": {
+            "code": "VALIDATION_ERROR",
+            "message": "currency must be GBP",
+            "status": 422,
+        }
+    }
+
+
+def test_error_envelope_shape_for_invalid_period(client: TestClient) -> None:
+    response = client.get("/api/transactions?timezone=Not/AZone")
+    assert response.status_code == 422
+    assert response.json() == {
+        "error": {
+            "code": "INVALID_PERIOD",
+            "message": "unknown timezone: Not/AZone",
+            "status": 422,
+        }
+    }
+
+
 def test_out_of_order_refund_and_payout_reconcile(
     client: TestClient, app
 ) -> None:

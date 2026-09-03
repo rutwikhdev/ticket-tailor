@@ -1,9 +1,10 @@
 import type { WatchSource } from 'vue'
-import { getApiErrorMessage } from '~/lib/api'
+import { normalizeApiError } from '~/lib/api'
+import type { ApiRequestError } from '~/lib/api'
 
 export function useClientData<T>(loader: () => Promise<T>, sources: WatchSource<unknown>[]) {
   const data = shallowRef<T>()
-  const error = ref<string>()
+  const error = ref<ApiRequestError>()
   const pending = ref(true)
   let requestId = 0
 
@@ -18,7 +19,7 @@ export function useClientData<T>(loader: () => Promise<T>, sources: WatchSource<
     } catch (requestError) {
       if (currentRequest === requestId) {
         data.value = undefined
-        error.value = getApiErrorMessage(requestError)
+        error.value = normalizeApiError(requestError)
       }
     } finally {
       if (currentRequest === requestId) pending.value = false
